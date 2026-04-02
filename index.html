@@ -1,0 +1,219 @@
+!DOCTYPE html
+html
+
+head
+  meta charset=UTF-8
+  meta name=viewport content=width=device-width, initial-scale=1.0
+  title備品発注フォームtitle
+  style
+    body {
+      font-family -apple-system, sans-serif;
+      margin 0;
+      padding 15px;
+      background #f4f7f9;
+      color #333;
+    }
+
+    h3 {
+      text-align center;
+      color #1DB446;
+      margin-bottom 20px;
+    }
+
+    .item-card {
+      background white;
+      border-radius 12px;
+      padding 15px;
+      margin-bottom 12px;
+      display flex;
+      align-items center;
+      justify-content space-between;
+      box-shadow 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .item-name {
+      font-weight bold;
+      font-size 15px;
+      color #444;
+      flex 1;
+      margin-right 10px;
+    }
+
+    .qty-controls {
+      display flex;
+      align-items center;
+      background #f0f0f0;
+      border-radius 8px;
+      padding 2px;
+    }
+
+    .btn-qty {
+      width 36px;
+      height 36px;
+      border none;
+      background white;
+      border-radius 6px;
+      font-size 20px;
+      font-weight bold;
+      cursor pointer;
+      color #1DB446;
+      box-shadow 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .qty-input {
+      width 45px;
+      text-align center;
+      border none;
+      background transparent;
+      font-size 17px;
+      font-weight bold;
+      outline none;
+    }
+
+    .footer {
+      position sticky;
+      bottom 0;
+      background rgba(244, 247, 249, 0.9);
+      padding 15px 0;
+      backdrop-filter blur(5px);
+    }
+
+    .submit-btn {
+      width 100%;
+      padding 16px;
+      background #06C755;
+      color white;
+      border none;
+      border-radius 12px;
+      font-size 17px;
+      font-weight bold;
+      cursor pointer;
+    }
+
+    .submit-btndisabled {
+      background #ccc;
+    }
+
+    #loading {
+      display none;
+      position fixed;
+      top 0;
+      left 0;
+      width 100%;
+      height 100%;
+      background rgba(255, 255, 255, 0.8);
+      z-index 1000;
+      justify-content center;
+      align-items center;
+      font-weight bold;
+    }
+  style
+head
+
+body
+  div id=loading処理中...div
+  h3📦 備品注文フォームh3
+  div id=itemListdiv
+  div class=footer
+    button class=submit-btn onclick=submitOrder()注文を確定して閉じるbutton
+  div
+  script src=httpsstatic.line-scdn.netliffedge2sdk.jsscript
+  script
+    const supplyList = [
+      1.セロテープ(大), 2.セロテープ(ミニ), 3.ガムテープ, 4.雑巾, 5.アルコール, 
+      6.ユニットカプステ(400円機), 7.ユニットカプステ(500円機), 8.ユニットガシャステ,
+      9.金属セレクター, 10.プラセレクター,11.高額ユニット(プレミアム専用),12.精算書(青伝),
+      13.精算書(横伝 ゆめタウン), 14.精算書(横伝 ツタヤ), 15.調整中POP, 16.返送メモ,
+      17.福通伝票(親伝), 18.福通伝票(孫伝), 19.集金袋
+    ];
+
+     初期化処理
+    async function initializeLiff() {
+      try {
+         設定.gsからIDを取得
+        const liffId = 2009669107-iTCKuJvo;
+        await liff.init({ liffId liffId });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+         profile権限が許可されていない（または追加されたばかりで同意が必要）な場合
+        const permissionStatus = await liff.permission.query(profile);
+        if (permissionStatus.state === prompt) {
+           再ログインを促して同意画面を表示させる
+          liff.login();
+        }
+
+      } catch (err) {
+        console.error(LIFF初期化失敗, err);
+        alert(初期化に失敗しました。LINEを再起動してください。);
+      }
+    }
+
+    window.onload = function() {
+      const listDiv = document.getElementById('itemList');
+      supplyList.forEach(name = {
+        listDiv.innerHTML += `
+          div class=item-card
+            div class=item-name${name}div
+            div class=qty-controls
+              button class=btn-qty onclick=changeQty('${name}', -1)−button
+              input type=number class=qty-input id=${name} value=0 min=0 readonly
+              button class=btn-qty onclick=changeQty('${name}', 1)＋button
+            div
+          div`;
+      });
+      initializeLiff();
+    };
+
+    function changeQty(id, delta) {
+      const input = document.getElementById(id);
+      let val = parseInt(input.value) + delta;
+      if (val  0) val = 0;
+      input.value = val;
+    }
+
+    async function submitOrder() {
+      const btn = document.querySelector('.submit-btn');
+      const GAS_URL = httpsscript.google.commacrossAKfycbzgay-prBg1_T-MAkAAt-13uBqcdJsUKZ3tIJdQL1mOKOCOXNLzTALfzkMh8R3Bh_6k-Aexec;
+
+      try {
+        const order = [];
+        supplyList.forEach(name = {
+          const qty = parseInt(document.getElementById(name).value);
+          if (qty  0) order.push({ name name, qty qty });
+        });
+
+        if (order.length === 0) { alert(商品を選択してください); return; }
+
+        btn.disabled = true;
+        document.getElementById('loading').style.display = 'flex';
+
+        const profile = await liff.getProfile();
+
+         GASへデータを送信
+        await fetch(GAS_URL, {
+          method POST,
+          mode no-cors,  重要：GASへのPOSTはno-corsにする
+          headers { Content-Type applicationjson },
+          body JSON.stringify({
+            action liff_order,
+            data { userName profile.displayName, items order }
+          })
+        });
+
+        alert(注文を送信しました！);
+        liff.closeWindow();
+
+      } catch (err) {
+        alert(送信エラー  + err.message);
+        btn.disabled = false;
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+  script
+body
+
+html
