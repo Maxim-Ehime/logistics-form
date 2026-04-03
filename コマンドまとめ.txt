@@ -45,4 +45,4 @@ git push origin main
 
 
 4．まとめて実行
-clasp push && clasp deploy -description "update" && git add . && git commit -m "update" && git push origin main
+clasp push; clasp deploy -description "update"; git add .; git commit -m "update"; git push origin main
