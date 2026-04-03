@@ -1,0 +1,48 @@
+1. GAS（本番環境）への反映
+VS Codeで書いたコードをGASに送り、ウェブアプリとして更新する手順です。
+ローカルのコードをGASサーバーへ送る
+clasp push
+
+新しいバージョンとしてデプロイ（本番反映）する
+PowerShell
+clasp deploy -description "修正内容のメモ"
+
+2. GitHub（バックアップ・履歴）への保存
+GitHubのリポジトリに最新のソースコードを保存する手順です。
+変更したファイルをすべてステージングに追加
+PowerShell
+git add .
+変更内容のメッセージを付けてコミット
+
+PowerShell
+git commit -m "修正内容のメモ"
+GitHubへアップロード
+
+PowerShell
+git push origin main
+
+3. 困ったとき・確認用のコマンド
+現在のデプロイ状況（IDやバージョン）を確認する
+PowerShell
+clasp deployments
+ブラウザでGASエディタを直接開く（ログ確認など）
+
+PowerShell
+clasp open
+GAS側をブラウザで直接いじった場合に、手元にコードを戻す
+
+PowerShell
+clasp pull
+💡 開発ルーティンの最短テンプレ
+修正が終わったら、以下の5行を順番にターミナルへ貼り付けるのが基本の流れになります。
+
+PowerShell
+clasp push
+clasp deploy -description "update"
+git add .
+git commit -m "update"
+git push origin main
+
+
+4．まとめて実行
+clasp push && clasp deploy -description "update" && git add . && git commit -m "update" && git push origin main
