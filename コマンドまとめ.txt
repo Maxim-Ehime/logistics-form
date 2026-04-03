@@ -26,17 +26,14 @@ git push origin main
 PowerShell
 clasp deployments
 ブラウザでGASエディタを直接開く（ログ確認など）
-
 PowerShell
 clasp open
 GAS側をブラウザで直接いじった場合に、手元にコードを戻す
-
 PowerShell
 clasp pull
 💡 開発ルーティンの最短テンプレ
 修正が終わったら、以下の5行を順番にターミナルへ貼り付けるのが基本の流れになります。
 
-PowerShell
 clasp push
 clasp deploy -description "update"
 git add .
