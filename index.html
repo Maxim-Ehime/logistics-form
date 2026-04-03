@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>備品発注フォーム</title>
   <style>
     body {
-      font-family: -apple-system, sans-serif;
+      font-family: -apple-system, "Helvetica Neue", sans-serif;
       margin: 0;
       padding: 15px;
       background: #f4f7f9;
@@ -17,9 +16,57 @@
     h3 {
       text-align: center;
       color: #1DB446;
-      margin-bottom: 20px;
+      margin: 10px 0 15px;
     }
 
+    /* --- タブメニュー --- */
+    .tab-container {
+      display: flex;
+      background: #e0e0e0;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 15px;
+    }
+
+    .tab-item {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+
+    .tab-item.active {
+      background: white;
+      color: #1DB446;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* --- 画像確認ボタン --- */
+    .view-img-btn {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 12px;
+      background: white;
+      border: 2px solid #06C755;
+      color: #06C755;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .item-group { display: none; }
+    .item-group.active { display: block; }
+
+    /* --- 商品カード --- */
     .item-card {
       background: white;
       border-radius: 12px;
@@ -90,21 +137,46 @@
       cursor: pointer;
     }
 
-    .submit-btn:disabled {
-      background: #ccc;
+    .submit-btn:disabled { background: #ccc; }
+
+    /* --- モーダル（複数画像対応） --- */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      flex-direction: column;
+      overflow-y: auto; /* 縦スクロールを有効化 */
+      padding: 20px 0;
+    }
+
+    .modal-image-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px; /* 画像間の隙間 */
+    }
+
+    .modal-content {
+      max-width: 90%;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    .close-area {
+      text-align: center;
+      padding: 20px;
     }
 
     #loading {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(255, 255, 255, 0.8);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
+      z-index: 3000;
+      justify-content: center; align-items: center;
       font-weight: bold;
     }
   </style>
@@ -113,49 +185,70 @@
 <body>
   <div id="loading">処理中...</div>
   <h3>📦 備品注文フォーム</h3>
-  <div id="itemList"></div>
+
+  <div class="tab-container">
+    <div id="tab1" class="tab-item active" onclick="switchTab(1)">通常備品</div>
+    <div id="tab2" class="tab-item" onclick="switchTab(2)">店舗備品</div>
+  </div>
+
+  <button class="view-img-btn" onclick="openModal()">🔍 備品一覧画像を確認する</button>
+
+  <div id="group1" class="item-group active"></div>
+  <div id="group2" class="item-group"></div>
+
   <div class="footer">
     <button class="submit-btn" onclick="submitOrder()">注文を確定して閉じる</button>
   </div>
+
+  <div id="imageModal" class="modal" onclick="closeModal()">
+    <div class="modal-image-container" id="modalImageContainer" onclick="event.stopPropagation()">
+      </div>
+    <div class="close-area">
+      <button style="padding:12px 40px; background:#06C755; color:white; border:none; border-radius:25px; font-weight:bold;">閉じる</button>
+    </div>
+  </div>
+
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    const supplyList = [
-      "1.セロテープ(大)", "2.セロテープ(ミニ)", "3.ガムテープ", "4.雑巾", "5.アルコール", 
-      "6.ユニット/カプステ(400円機)", "7.ユニット/カプステ(500円機)", "8.ユニット/ガシャステ",
-      "9.金属セレクター", "10.プラセレクター","11.高額ユニット(プレミアム専用)","12.精算書(青伝)",
-      "13.精算書(横伝 ゆめタウン)", "14.精算書(横伝 ツタヤ)", "15.調整中POP", "16.返送メモ",
-      "17.福通伝票(親伝)", "18.福通伝票(孫伝)", "19.集金袋"
-    ];
+    const supplyList1 = ["1.セロテープ(大)", "2.セロテープ(ミニ)", "3.ガムテープ", "4.雑巾", "5.アルコール", "6.ユニット/カプステ(400円機)", 
+                        "7.ユニット/カプステ(500円機)", "8.ユニット/ガシャステ", "9.金属セレクター", "10.プラセレクター","11.高額ユニット(プレミアム専用)",
+                        "12.精算書(青伝)", "13.精算書(横伝 ゆめタウン)", "14.精算書(横伝 ツタヤ)", "15.調整中POP", "16.返送メモ", "17.福通伝票(親伝)", 
+                        "18.福通伝票(孫伝)", "19.集金袋"];
 
-    // 初期化処理
-    async function initializeLiff() {
-      try {
-        // 設定.gsからIDを取得
-        const liffId = "2009669107-iTCKuJvo";
-        await liff.init({ liffId: liffId });
+    const supplyList2 = ["1.エアレジ用ロール紙", "2.お買い上げテープ", "3.持ち帰り袋", "4.あたりシール", "5.当たり台紙", "6.当たりハガキ", "7.NEWポップ(ラミ加工)",
+                        "8.ラミネータ用紙A4", "9.ラミネータ用紙A3", "10.オズコレボビニール袋M", "11.オズコレボビニール袋L", "12.オズコレボ紙袋", "13.ゴミ袋45L", "14.ゴミ袋90L",
+                        "15.月売上表", "16.金種表", "17.物販売上レシート", "18.打刻漏れ・修正希望一覧", "19.◯月入荷表", "20.DPなし貼付シート", "21.返品当たりシールチェック用紙",
+                        "22.高額集計表", "23.あたりシール台紙", "24.その他(アルパークのみ)","25.その他(高松・オルネのみ", "26.その他(ASOBIGOCORO・アルパークのみ)"];
 
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
+    // 画像パスの設定
+    const IMG_1 = ["img/supply_standard.png"];
+    const IMG_2 = ["img/supply_shop_1.png", "img/supply_shop_2.png"]; // 店舗用は2枚
 
-        // profile権限が許可されていない（または追加されたばかりで同意が必要）な場合
-        const permissionStatus = await liff.permission.query("profile");
-        if (permissionStatus.state === "prompt") {
-          // 再ログインを促して同意画面を表示させる
-          liff.login();
-        }
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbw5v4v-dGM0KHADfOekXceIfDtMczhxepCU5rUZkWUK5W5LRCSCsgnA6PBrPF-72S8HqQ/exec";
+    const LIFF_ID = "2009669107-iTCKuJvo";
 
-      } catch (err) {
-        console.error("LIFF初期化失敗", err);
-        alert("初期化に失敗しました。LINEを再起動してください。");
-      }
+    let currentTab = 1;
+
+    function switchTab(num) {
+      currentTab = num;
+      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.item-group').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById('tab' + num).classList.add('active');
+      document.getElementById('group' + num).classList.add('active');
+      updateModalImages(); // タブ切り替え時にモーダルの中身も準備
     }
 
-    window.onload = function() {
-      const listDiv = document.getElementById('itemList');
-      supplyList.forEach(name => {
-        listDiv.innerHTML += `
+    function updateModalImages() {
+      const container = document.getElementById('modalImageContainer');
+      const images = (currentTab === 1) ? IMG_1 : IMG_2;
+      container.innerHTML = images.map(src => `<img class="modal-content" src="${src}" alt="備品画像">`).join('');
+    }
+
+    function renderList(list, containerId) {
+      const container = document.getElementById(containerId);
+      list.forEach(name => {
+        container.innerHTML += `
           <div class="item-card">
             <div class="item-name">${name}</div>
             <div class="qty-controls">
@@ -165,8 +258,7 @@
             </div>
           </div>`;
       });
-      initializeLiff();
-    };
+    }
 
     function changeQty(id, delta) {
       const input = document.getElementById(id);
@@ -175,13 +267,35 @@
       input.value = val;
     }
 
+    function openModal() {
+      updateModalImages();
+      document.getElementById('imageModal').style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('imageModal').style.display = 'none';
+    }
+
+    async function initializeLiff() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
+      } catch (err) {
+        console.error("LIFF初期化失敗", err);
+      }
+    }
+
+    window.onload = function() {
+      renderList(supplyList1, 'group1');
+      renderList(supplyList2, 'group2');
+      initializeLiff();
+    };
+
     async function submitOrder() {
       const btn = document.querySelector('.submit-btn');
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbyhlaFWYo3lrggjcbj70aaGXMkv8qotL4f5KZ4RXg3p5Wgrk8Hbt_oyV730ILGijdH1Qw/exec";
-
       try {
         const order = [];
-        supplyList.forEach(name => {
+        [...supplyList1, ...supplyList2].forEach(name => {
           const qty = parseInt(document.getElementById(name).value);
           if (qty > 0) order.push({ name: name, qty: qty });
         });
@@ -193,10 +307,9 @@
 
         const profile = await liff.getProfile();
 
-        // GASへデータを送信
         await fetch(GAS_URL, {
           method: "POST",
-          mode: "no-cors", // 重要：GASへのPOSTはno-corsにする
+          mode: "no-cors",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "liff_order",
@@ -215,5 +328,4 @@
     }
   </script>
 </body>
-
 </html>
