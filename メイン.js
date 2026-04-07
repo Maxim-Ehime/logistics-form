@@ -1,5 +1,5 @@
 /**
- * LINE/LIFFからのPOSTリクエスト処理aaaaaaaaaacl
+ * LINE/LIFFからのPOSTリクエスト処理
  */
 function doPost(e) {
   let json;
