@@ -8,17 +8,10 @@ PowerShell
 clasp deploy -description "修正内容のメモ"
 
 2. GitHub（バックアップ・履歴）への保存
-GitHubのリポジトリに最新のソースコードを保存する手順です。
-変更したファイルをすべてステージングに追加
-PowerShell
-git add .
-変更内容のメッセージを付けてコミット
-
-PowerShell
-git commit -m "修正内容のメモ"
-GitHubへアップロード
-
-PowerShell
+git add . (指定する場合はgit add ファイル名)
+# 2. まとめて確定（コミット）する
+git commit -m "すべての変更を反映"
+# 3. 送信（プッシュ）する
 git push origin main
 
 3. 困ったとき・確認用のコマンド
