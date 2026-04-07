@@ -47,7 +47,7 @@ function createJsonResponse(data) {
 }
 
 function doGet() {
-  return HtmlService.createTemplateFromFile('index').evaluate()
+  return HtmlService.createTemplateFromFile('order_form').evaluate()
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setTitle('備品発注フォーム');
 }
