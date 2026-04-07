@@ -16,6 +16,11 @@
     }
     input:focus { border-color: #007bff; }
     .user-name { background: #e9ecef; color: #6c757d; font-weight: bold; }
+
+    select {
+      width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; transition: border 0.2s; background: white; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center;
+    }
+    select:focus { border-color: #007bff; }
     
     /* --- ステッパー（+/- ボタン） --- */
     .qty-controls {
@@ -85,6 +90,16 @@
   <div class="form-group">
     <label>依頼者</label>
     <input type="text" id="userName" class="user-name" readonly>
+  </div>
+
+  <div class="form-group">
+    <label>配送業者<span class="required-badge">必須</span></label>
+    <select id="carrier">
+      <option value="クロネコヤマト">クロネコヤマト</option>
+      <option value="佐川急便">佐川急便</option>
+      <option value="西濃運輸">西濃運輸</option>
+      <option value="福山通運">福山通運</option>
+    </select>
   </div>
 
   <div class="form-group">
@@ -160,6 +175,11 @@
         if (!liff.isLoggedIn()) { liff.login(); return; }
         const profile = await liff.getProfile();
         document.getElementById('userName').value = profile.displayName;
+
+        const savedCarrier = localStorage.getItem('shippingCarrier');
+        if (savedCarrier) {
+          document.getElementById('carrier').value = savedCarrier;
+        }
       } catch (err) {
         console.error("LIFF初期化失敗", err);
       }
@@ -170,9 +190,11 @@
       
       const hasSupplies = document.querySelector('input[name="hasSupplies"]:checked').value;
       const hasRemaining = document.querySelector('input[name="hasRemaining"]:checked').value;
+      const carrier = document.getElementById('carrier').value;
 
       const data = {
         userName: document.getElementById('userName').value,
+        carrier: carrier,
         arrivalDate: document.getElementById('arrivalDate').value,
         destination: document.getElementById('destination').value || "未入力",
         minCt: document.getElementById('minCt').value,
@@ -197,6 +219,7 @@
         });
 
         alert("送り依頼を送信しました！");
+        localStorage.setItem('shippingCarrier', carrier);
         liff.closeWindow();
       } catch (err) {
         alert("送信エラーが発生しました: " + err.message);
