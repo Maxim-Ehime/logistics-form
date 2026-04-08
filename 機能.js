@@ -30,10 +30,11 @@ function writeToSheet(sheetName, dataArray) {
  */
 function processLiffShipping(payload) {
   // スプレッドシートへ書き込む形式に整える [cite: 2, 3]
-  // [タイムスタンプ, 氏名, 着日, 送り先, 最低Ct, 最高Ct, 備品, 残から]
+  // [タイムスタンプ, 氏名, 配送業者, 希望着日, 送り先, 最低Ct, 最高Ct, 備品, 残から]
   const recordData = [
     new Date(),
     payload.userName,
+    payload.carrier,
     payload.arrivalDate,
     payload.destination,
     payload.minCt,
@@ -48,12 +49,13 @@ function processLiffShipping(payload) {
   // 管理者へ通知
     const message = "🚚 新しい送り依頼が届きました！\n" +
                     "氏名: " + (recordData[1] || "") + "\n" +
-                    "希望着日: " + (recordData[2] || "") + "\n" +
-                    "送り先: " + (recordData[3] || "") + "\n" +
-                    "最低カートン: " + (recordData[4] || "") + "\n" +
-                    "最高カートン: " + (recordData[5] || "") + "\n" +
-                    "備品: " + (recordData[6] || "") + "\n" +
-                    "残から: " + (recordData[7] || "");
+                    "配送業者: " + (recordData[2] || "") + "\n" +
+                    "希望着日: " + (recordData[3] || "") + "\n" +
+                    "送り先: " + (recordData[4] || "") + "\n" +
+                    "最低カートン: " + (recordData[5] || "") + "\n" +
+                    "最高カートン: " + (recordData[6] || "") + "\n" +
+                    "備品: " + (recordData[7] || "") + "\n" +
+                    "残から: " + (recordData[8] || "");
 
   sendPush(CONFIG.TARGET_USER_ID, message);
   return "送り依頼完了";

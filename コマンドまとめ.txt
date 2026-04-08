@@ -2,6 +2,7 @@
 VS Codeで書いたコードをGASに送り、ウェブアプリとして更新する手順です。
 ローカルのコードをGASサーバーへ送る
 clasp push
+clasp push -f --強制書き換え
 
 新しいバージョンとしてデプロイ（本番反映）する
 PowerShell
