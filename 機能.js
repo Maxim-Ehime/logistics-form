@@ -48,8 +48,8 @@ function processLiffShipping(payload) {
 
   // 管理者へ通知
     const message = "🚚 新しい送り依頼が届きました！\n" +
-                    "氏名: " + (recordData[1] || "") + "\n" +
-                    "配送業者: " + (recordData[2] || "") + "\n" +
+                    "依頼者: " + (recordData[1] || "") + "\n" +
+                    "運送会社: " + (recordData[2] || "") + "\n" +
                     "希望着日: " + (recordData[3] || "") + "\n" +
                     "送り先: " + (recordData[4] || "") + "\n" +
                     "最低カートン: " + (recordData[5] || "") + "\n" +
@@ -78,7 +78,7 @@ function processLiffOrder(payload) {
 
   // 管理者通知
   const notifyMessage = "📦 備品注文が届きました！\n" +
-                        "氏名: " + (recordData[1] || "") + "\n" +
+                        "依頼者: " + (recordData[1] || "") + "\n" +
                         "内容: " + (recordData[2] || "");
   
   sendPush(CONFIG.TARGET_USER_ID, notifyMessage);
