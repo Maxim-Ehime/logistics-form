@@ -18,6 +18,17 @@
       color: #1DB446;
       margin: 10px 0 15px;
     }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; font-size: 14px; }
+    .user-name {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 16px;
+      outline: none;
+    }
 
     /* --- タブメニュー --- */
     .tab-container {
@@ -185,6 +196,10 @@
 <body>
   <div id="loading">処理中...</div>
   <h3>📦 備品注文フォーム</h3>
+  <div class="form-group">
+    <label>依頼者</label>
+    <input type="text" id="userName" class="user-name" placeholder="氏名を入力">
+  </div>
 
   <div class="tab-container">
     <div id="tab1" class="tab-item active" onclick="switchTab(1)">通常備品</div>
@@ -226,6 +241,7 @@
 
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxiAc2b0CxyL7uCs81Ua2LiJXBnZZxRMaFBA2B0FdCiHTxsMQK9HR87ldqsejdJKo40/exec";
     const LIFF_ID = "2009669107-iTCKuJvo";
+    const USER_NAME_STORAGE_KEY = "requestUserName";
 
     let currentTab = 1;
 
@@ -280,6 +296,9 @@
       try {
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
+        const profile = await liff.getProfile();
+        const savedName = localStorage.getItem(USER_NAME_STORAGE_KEY) || localStorage.getItem('shippingUserName');
+        document.getElementById('userName').value = savedName || profile.displayName;
       } catch (err) {
         console.error("LIFF初期化失敗", err);
       }
@@ -305,7 +324,7 @@
         btn.disabled = true;
         document.getElementById('loading').style.display = 'flex';
 
-        const profile = await liff.getProfile();
+        const userName = document.getElementById('userName').value;
 
         await fetch(GAS_URL, {
           method: "POST",
@@ -313,10 +332,11 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "liff_order",
-            data: { userName: profile.displayName, items: order }
+            data: { userName: userName, items: order }
           })
         });
 
+        localStorage.setItem(USER_NAME_STORAGE_KEY, userName);
         alert("注文を送信しました！");
         liff.closeWindow();
 

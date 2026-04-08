@@ -160,7 +160,8 @@
   <script>
 
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxiAc2b0CxyL7uCs81Ua2LiJXBnZZxRMaFBA2B0FdCiHTxsMQK9HR87ldqsejdJKo40/exec";
-    const LIFF_ID = "2009669107-iTCKuJvo"; 
+    const LIFF_ID = "2009669107-iTCKuJvo";
+    const USER_NAME_STORAGE_KEY = "requestUserName";
 
     function changeStepperQty(id, delta) {
       const input = document.getElementById(id);
@@ -174,7 +175,7 @@
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
         const profile = await liff.getProfile();
-        const savedName = localStorage.getItem('shippingUserName');
+        const savedName = localStorage.getItem(USER_NAME_STORAGE_KEY) || localStorage.getItem('shippingUserName');
         document.getElementById('userName').value = savedName || profile.displayName;
 
         const savedCarrier = localStorage.getItem('shippingCarrier');
@@ -220,7 +221,7 @@
         });
 
         alert("送り依頼を送信しました！");
-        localStorage.setItem('shippingUserName', data.userName);
+        localStorage.setItem(USER_NAME_STORAGE_KEY, data.userName);
         localStorage.setItem('shippingCarrier', carrier);
         liff.closeWindow();
       } catch (err) {
