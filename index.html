@@ -93,8 +93,9 @@
   </div>
 
   <div class="form-group">
-    <label>配送業者<span class="required-badge">必須</span></label>
+    <label>配送業者</label>
     <select id="carrier">
+      <option value="">未選択</option>
       <option value="クロネコヤマト">クロネコヤマト</option>
       <option value="佐川急便">佐川急便</option>
       <option value="西濃運輸">西濃運輸</option>
@@ -177,11 +178,6 @@
         const profile = await liff.getProfile();
         const savedName = localStorage.getItem(USER_NAME_STORAGE_KEY) || localStorage.getItem('shippingUserName');
         document.getElementById('userName').value = savedName || profile.displayName;
-
-        const savedCarrier = localStorage.getItem('shippingCarrier');
-        if (savedCarrier) {
-          document.getElementById('carrier').value = savedCarrier;
-        }
       } catch (err) {
         console.error("LIFF初期化失敗", err);
       }
@@ -222,7 +218,6 @@
 
         alert("送り依頼を送信しました！");
         localStorage.setItem(USER_NAME_STORAGE_KEY, data.userName);
-        localStorage.setItem('shippingCarrier', carrier);
         liff.closeWindow();
       } catch (err) {
         alert("送信エラーが発生しました: " + err.message);
