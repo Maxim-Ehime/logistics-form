@@ -30,7 +30,7 @@ function writeToSheet(sheetName, dataArray) {
  */
 function processLiffShipping(payload) {
   // スプレッドシートへ書き込む形式に整える [cite: 2, 3]
-  // [タイムスタンプ, 氏名, 配送業者, 希望着日, 送り先, 最低Ct, 最高Ct, 備品, 残から]
+  // [タイムスタンプ, 氏名, 運送会社, 希望着日, 送り先, 最低Ct, 最高Ct, 備品, 残から]
   const recordData = [
     new Date(),
     payload.userName,

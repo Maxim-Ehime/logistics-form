@@ -188,7 +188,7 @@
       
       const hasSupplies = document.querySelector('input[name="hasSupplies"]:checked').value;
       const hasRemaining = document.querySelector('input[name="hasRemaining"]:checked').value;
-      const carrier = document.getElementById('carrier').value;
+      const carrier = document.getElementById('carrier').value || '未選択';
 
       const data = {
         userName: document.getElementById('userName').value,
