@@ -1,7 +1,19 @@
 /**
  * 指定シートの2行目にデータを挿入
  */
-function writeToSheet(sheetName, dataArray) {
+function normalizeCellValue(value) {
+  return value === undefined || value === null ? "" : value;
+}
+
+function findHeaderColumn(headers, headerName) {
+  const column = headers.findIndex(header => header === headerName) + 1;
+  if (column <= 0) {
+    throw new Error(`ヘッダー「${headerName}」が見つかりません`);
+  }
+  return column;
+}
+
+function writeToSheet(sheetName, rowDataByHeader, checkboxHeaderName) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
@@ -12,14 +24,23 @@ function writeToSheet(sheetName, dataArray) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+      .map(header => String(header).trim());
+    const rowValues = headers.map(header => normalizeCellValue(rowDataByHeader[header]));
+
     sheet.insertRowBefore(2); // 見出し直下に挿入
-    sheet.getRange(2, 1, 1, dataArray.length).setValues([dataArray]);
-    
-    // 最終列にチェックボックスを設置
-    sheet.getRange(2, dataArray.length + 1).insertCheckboxes();
+    sheet.getRange(2, 1, 1, rowValues.length).setValues([rowValues]);
+
+    if (checkboxHeaderName) {
+      const checkboxColumn = findHeaderColumn(headers, checkboxHeaderName);
+      sheet.getRange(2, checkboxColumn).insertCheckboxes();
+      sheet.getRange(2, checkboxColumn).setValue(false); // 新規行は未チェック
+    }
+
     SpreadsheetApp.flush();
   } catch (e) {
     Logger.log(`エラー: ${e.message}`);
+    throw e;
   } finally {
     lock.releaseLock();
   }
@@ -29,33 +50,38 @@ function writeToSheet(sheetName, dataArray) {
  * 送り依頼処理
  */
 function processLiffShipping(payload) {
-  // スプレッドシートへ書き込む形式に整える [cite: 2, 3]
-  // [タイムスタンプ, 氏名, 運送会社, 希望着日, 送り先, 最低Ct, 最高Ct, 備品, 残から]
-  const recordData = [
-    new Date(),
-    payload.userName,
-    payload.carrier,
-    payload.arrivalDate,
-    payload.destination,
-    payload.minCt,
-    payload.maxCt,
-    payload.hasSupplies,
-    payload.hasRemaining
-  ];
+  const submittedAt = new Date();
+  const rowData = {
+    "タイムスタンプ": submittedAt,
+    "日時": submittedAt,
+    "氏名": payload.userName,
+    "依頼者": payload.userName,
+    "運送会社": payload.carrier,
+    "希望着日": payload.arrivalDate,
+    "送り先": payload.destination,
+    "納品先": payload.destination,
+    "最低Ct": payload.minCt,
+    "最低カートン": payload.minCt,
+    "最高Ct": payload.maxCt,
+    "最高カートン": payload.maxCt,
+    "備品": payload.hasSupplies,
+    "備品注文の有無": payload.hasSupplies,
+    "残から": payload.hasRemaining
+  };
 
   // 「送り依頼」シートに書き込み
-  writeToSheet(CONFIG.MASTER_SHEET_NAME, recordData);
+  writeToSheet(CONFIG.MASTER_SHEET_NAME, rowData, "済");
 
   // 管理者へ通知
     const message = "🚚 新しい送り依頼が届きました！\n" +
-                    "依頼者: " + (recordData[1] || "") + "\n" +
-                    "運送会社: " + (recordData[2] || "") + "\n" +
-                    "希望着日: " + (recordData[3] || "") + "\n" +
-                    "送り先: " + (recordData[4] || "") + "\n" +
-                    "最低カートン: " + (recordData[5] || "") + "\n" +
-                    "最高カートン: " + (recordData[6] || "") + "\n" +
-                    "備品: " + (recordData[7] || "") + "\n" +
-                    "残から: " + (recordData[8] || "");
+                    "依頼者: " + normalizeCellValue(rowData["氏名"]) + "\n" +
+                    "運送会社: " + normalizeCellValue(rowData["運送会社"]) + "\n" +
+                    "希望着日: " + normalizeCellValue(rowData["希望着日"]) + "\n" +
+                    "送り先: " + normalizeCellValue(rowData["送り先"]) + "\n" +
+                    "最低カートン: " + normalizeCellValue(rowData["最低Ct"]) + "\n" +
+                    "最高カートン: " + normalizeCellValue(rowData["最高Ct"]) + "\n" +
+                    "備品: " + normalizeCellValue(rowData["備品"]) + "\n" +
+                    "残から: " + normalizeCellValue(rowData["残から"]);
 
   sendPush(CONFIG.TARGET_USER_ID, message);
   return "送り依頼完了";
@@ -68,18 +94,23 @@ function processLiffOrder(payload) {
   const { userName, items } = payload;
   
   // 注文内容の整形
-  const itemSummary = items.map(item => `${item.name} x ${item.qty}`).join(", ");
+  const itemSummary = (items || []).map(item => `${item.name} x ${item.qty}`).join(", ");
+  const submittedAt = new Date();
+  const rowData = {
+    "タイムスタンプ": submittedAt,
+    "日時": submittedAt,
+    "氏名": userName,
+    "依頼者": userName,
+    "内容": itemSummary
+  };
 
-  // 備品シート用データ [A:日時, B:氏名, C:内容]
-  const recordData = [new Date(), userName, itemSummary];
-
-  // シート書き込み 
-  writeToSheet(CONFIG.SUPPLY_SHEET_NAME, recordData);
+  // 「済」列にチェックボックスを配置
+  writeToSheet(CONFIG.SUPPLY_SHEET_NAME, rowData, "済");
 
   // 管理者通知
   const notifyMessage = "📦 備品注文が届きました！\n" +
-                        "依頼者: " + (recordData[1] || "") + "\n" +
-                        "内容: " + (recordData[2] || "");
+                        "依頼者: " + normalizeCellValue(rowData["氏名"]) + "\n" +
+                        "内容: " + normalizeCellValue(rowData["内容"]);
   
   sendPush(CONFIG.TARGET_USER_ID, notifyMessage);
 
